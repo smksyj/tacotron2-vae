@@ -4,7 +4,7 @@ import torch
 import torch.utils.data
 
 import layers
-from utils import load_wav_to_torch, load_filepaths_and_text
+from utils import load_wav_to_torch, load_filepaths_and_text, ljspeech_load_filepaths_and_text
 from text import text_to_sequence
 
 
@@ -135,3 +135,33 @@ class TextMelCollate():
 
         return text_padded, input_lengths, mel_padded, gate_padded, \
             output_lengths, speakers, emotions
+
+
+class LJSpeechTextMelLoader(TextMelLoader):
+    def __init__(self, audiopaths_and_text, hparams, data_root='./LJSpeech-1.1/wavs'):
+        self.audiopaths_and_text = ljspeech_load_filepaths_and_text(audiopaths_and_text, data_root=data_root)
+        self.text_cleaners = hparams.text_cleaners
+        self.max_wav_value = hparams.max_wav_value
+        self.sampling_rate = hparams.sampling_rate
+        self.load_mel_from_disk = hparams.load_mel_from_disk
+        
+        print("여기 n_emotions 나중에 맞게 수정할 것")
+        self.n_speakers = hparams.n_speakers
+        self.n_emotions = hparams.n_emotions
+
+        self.stft = layers.TacotronSTFT(
+            hparams.filter_length, hparams.hop_length, hparams.win_length,
+            hparams.n_mel_channels, hparams.sampling_rate, hparams.mel_fmin,
+            hparams.mel_fmax)
+        random.seed(1234)
+        random.shuffle(self.audiopaths_and_text)
+        
+    def get_mel_text_pair(self, audiopath_and_text):
+        # separate filename and text
+        audiopath, text, speaker, emotion = audiopath_and_text[0], audiopath_and_text[1], audiopath_and_text[2], audiopath_and_text[3] # filelists/*.txt 구조대로 parsing
+        text = self.get_text(text) # int_tensor[char_index, ....]
+        mel = self.get_mel(audiopath) # []
+        speaker = self.get_speaker(speaker) # 현재는 single speaker
+        emotion = self.get_emotion(emotion)
+
+        return (text, mel, speaker, emotion)

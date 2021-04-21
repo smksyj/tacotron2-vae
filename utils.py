@@ -6,10 +6,19 @@ import os
 
 max_wav_value=32768.0
 
+# def get_mask_from_lengths(lengths):
+#     max_len = torch.max(lengths).item()
+#     ids = torch.arange(0, max_len, out=torch.cuda.LongTensor(max_len))
+#     mask = (ids < lengths.unsqueeze(1)).byte()
+#     return mask
+
+
+
 def get_mask_from_lengths(lengths):
     max_len = torch.max(lengths).item()
     ids = torch.arange(0, max_len, out=torch.cuda.LongTensor(max_len))
-    mask = (ids < lengths.unsqueeze(1)).byte()
+    # change from byte() into bool() by smksyj at 2021/4/21
+    mask = (ids < lengths.unsqueeze(1)).bool()
     return mask
 
 
@@ -21,6 +30,18 @@ def load_wav_to_torch(full_path):
 def load_filepaths_and_text(filename, split="|"):
     with open(filename, encoding='utf-8') as f:
         filepaths_and_text = [line.strip().split(split) for line in f]
+    return filepaths_and_text
+
+
+def ljspeech_load_filepaths_and_text(filename: str, split="|", data_root='./LJSpeech-1.1/wavs'):
+    filepaths_and_text = []
+    with open(filename, encoding='utf-8') as f:
+        for line in f:
+            filename, text, norm_text = line.strip().split(split)
+            # dummy speaker and emotion for dataset format
+            speaker = 0
+            emotion = 0 
+            filepaths_and_text.append((data_root + '/' + filename + '.wav', norm_text, speaker, emotion))
     return filepaths_and_text
 
 
