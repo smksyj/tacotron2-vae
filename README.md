@@ -56,6 +56,11 @@
 
 ![alignment](./res/alignment.gif)
 
+## LJSpeechDataset
+1. Training
+    * train:valid = 8:2로 분리
+    * 약 24시간 (32 batch로 110 epoch?) 정도에서는 제대로 음성이 나옴
+
 ## Visualization
 source: `inference.ipynb`
 
